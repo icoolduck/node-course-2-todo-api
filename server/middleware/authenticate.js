@@ -8,11 +8,11 @@ var authenticate = (req, res, next) => {
       return Promise.reject();
     }
 
-    req.user = user;
+    req.user = user;       //update user in request header
     req.token = token;
     next();
   }).catch((e) => {
-    res.status(401).send();
+    res.status(401).send();    // next() not called to stop process if auth failed.
   });
 };
 
