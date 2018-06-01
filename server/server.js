@@ -53,14 +53,35 @@ app.get('/todos', authenticate, (req, res) => {     // private
 });
 
 
-app.get('/todos/:id', (req, res) => {
+// app.get('/todos/:id', (req, res) => {
+//   var id = req.params.id;
+//
+//   if (!ObjectID.isValid(id)) {
+//     return res.status(404).send();
+//   }
+//
+//   Todo.findById(id).then((todo) => {
+//     if (!todo) {
+//       return res.status(404).send();
+//     }
+//
+//     res.send({todo});
+//   }).catch((e) => {
+//     res.status(400).send();
+//   });
+// });
+
+app.get('/todos/:id', authenticate, (req, res) => {
   var id = req.params.id;
 
   if (!ObjectID.isValid(id)) {
     return res.status(404).send();
   }
 
-  Todo.findById(id).then((todo) => {
+  Todo.findOne({
+    _id: id,
+    _creator: req.user._id
+  }).then((todo) => {
     if (!todo) {
       return res.status(404).send();
     }
@@ -71,43 +92,91 @@ app.get('/todos/:id', (req, res) => {
   });
 });
 
+
 // delete added
-app.delete('/todos/:id', (req, res) => {
+// app.delete('/todos/:id', (req, res) => {
+//   var id = req.params.id;
+//
+//   if (!ObjectID.isValid(id)) {
+//     return res.status(404).send();
+//   }
+//
+//   Todo.findByIdAndRemove(id).then((todo) => {
+//     if (!todo) {
+//       return res.status(404).send();
+//     }
+//
+//     res.send({todo});     // amemded to include {}
+//   }).catch((e) => {
+//     res.status(400).send();
+//   });
+// });
+
+app.delete('/todos/:id', authenticate, (req, res) => {
   var id = req.params.id;
 
   if (!ObjectID.isValid(id)) {
     return res.status(404).send();
   }
 
-  Todo.findByIdAndRemove(id).then((todo) => {
+  Todo.findOneAndRemove({
+    _id: id,
+    _creator: req.user._id
+  }).then((todo) => {
     if (!todo) {
       return res.status(404).send();
     }
 
-    res.send({todo});     // amemded to include {}
+    res.send({todo});
   }).catch((e) => {
     res.status(400).send();
   });
 });
 
 // added for Patch
-app.patch('/todos/:id', (req, res) => {
+// app.patch('/todos/:id', (req, res) => {
+//   var id = req.params.id;
+//   var body = _.pick(req.body, ['text', 'completed']);    //where updatable stored
+//
+//   if (!ObjectID.isValid(id)) {
+//     return res.status(404).send();
+//   }
+//
+//   if (_.isBoolean(body.completed) && body.completed) {    // is a boolean & is true
+//     body.completedAt = new Date().getTime();      // set date of completion - JS time format
+//   } else {
+//     body.completed = false;
+//     body.completedAt = null;
+//   }
+//
+//    // body is key_value pair set by operator $set.
+//   Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then((todo) => {
+//     if (!todo) {
+//       return res.status(404).send();
+//     }
+//
+//     res.send({todo});
+//   }).catch((e) => {
+//     res.status(400).send();
+//   })
+// });
+
+app.patch('/todos/:id', authenticate, (req, res) => {
   var id = req.params.id;
-  var body = _.pick(req.body, ['text', 'completed']);    //where updatable stored
+  var body = _.pick(req.body, ['text', 'completed']);
 
   if (!ObjectID.isValid(id)) {
     return res.status(404).send();
   }
 
-  if (_.isBoolean(body.completed) && body.completed) {    // is a boolean & is true
-    body.completedAt = new Date().getTime();      // set date of completion - JS time format
+  if (_.isBoolean(body.completed) && body.completed) {
+    body.completedAt = new Date().getTime();
   } else {
     body.completed = false;
     body.completedAt = null;
   }
 
-   // body is key_value pair set by operator $set.
-  Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then((todo) => {
+  Todo.findOneAndUpdate({_id: id, _creator: req.user._id}, {$set: body}, {new: true}).then((todo) => {
     if (!todo) {
       return res.status(404).send();
     }
@@ -117,6 +186,7 @@ app.patch('/todos/:id', (req, res) => {
     res.status(400).send();
   })
 });
+
 
 // POST /users
 app.post('/users', (req, res) => {
